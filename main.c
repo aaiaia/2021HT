@@ -554,8 +554,10 @@ unsigned int find_linerAlgo_keyWord(s_llist* pList, s_dataSet* pDat, char* keyWo
 			else;
 		}
 	}
+#if 0
 	printf("p: 0x%x, _: 0x%x, n: 0x%x, obj: 0x%x\r\n", \
 			pList->prev, pList, pList->next, pList->object);
+#endif
 	return _hitCnt;
 }
 
@@ -563,14 +565,13 @@ unsigned int find_linerAlgo_keyWord(s_llist* pList, s_dataSet* pDat, char* keyWo
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define timeMes printf("[TIME] ) ")
-void printExcutingTime(struct timeval *start)
+void printExcutingTime(struct timeval *start, struct timeval *end)
 {
-	struct timeval end;
 	struct timeval diff;
-	gettimeofday( &end, NULL );
+	gettimeofday( end, NULL );
 
-	diff.tv_sec = end.tv_sec - start->tv_sec;
-	diff.tv_usec = end.tv_usec - start->tv_usec;
+	diff.tv_sec = end->tv_sec - start->tv_sec;
+	diff.tv_usec = end->tv_usec - start->tv_usec;
 	if(diff.tv_usec<0)
 	{
 		diff.tv_usec+=1000000;
@@ -587,6 +588,7 @@ int main(int argc, char* argv[])
 {
 	// to measuring time
 	struct timeval time_s;
+	struct timeval time_e;
 
 	// to keyIn
 	char _keyInWord[1024] = {0};
@@ -594,6 +596,10 @@ int main(int argc, char* argv[])
 	unsigned int findHitCnt;
 	s_llist* findHitList;
 	s_dataSet* dSet_au500 = NULL;
+	s_dataSet* dSet_ca500 = NULL;
+	s_dataSet* dSet_uk500 = NULL;
+	s_dataSet* dSet_us500 = NULL;
+	unsigned int printCnt;
 
 	/* init llist */
 	findHitList = open_llist();
@@ -604,19 +610,45 @@ int main(int argc, char* argv[])
 	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
 	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
 
+	dSet_ca500 = loadFile("ca-500.csv");
+	print_dataSet(dSet_ca500);
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+
+	dSet_uk500 = loadFile("uk-500.csv");
+	print_dataSet(dSet_uk500);
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+
+	dSet_us500 = loadFile("us-500.csv");
+	print_dataSet(dSet_us500);
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+	while(1)
 	{
+		printf("Insert Keyword: ");
+		scanf("%1023s", _keyInWord);
+
 		gettimeofday(&time_s, NULL);
-		findHitCnt = find_linerAlgo_keyWord(findHitList , dSet_au500, "1");
-		printExcutingTime(&time_s);
+		findHitCnt = find_linerAlgo_keyWord(findHitList , dSet_au500, _keyInWord);
+		gettimeofday(&time_e, NULL);
 		{
-			unsigned int _cnt = 0;
-			for(s_llist* _hitList = findHitList; _hitList != NULL; _hitList = _hitList->next)
+			printCnt = 0;
+			for(s_llist* _hitList = findHitList; (_hitList != NULL) && (_hitList->object != NULL); _hitList = _hitList->next)
 			{
+				printf("p: 0x%08x,_: 0x%08x,n: 0x%08x,", _hitList->prev, _hitList, _hitList->next);
 				print_dataSetCol((s_strType**)get_llist_object(_hitList), dSet_au500->col);
-				_cnt++;
+				printCnt++;
 			}
-			printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, _cnt);
+			printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, printCnt);
+			printExcutingTime(&time_s, &time_e);
 		}
+		// clear llist
+		findHitList = close_llist(findHitList );
+		findHitList = open_llist();
 	}
 
 	s_strType* _tmp;
