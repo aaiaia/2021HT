@@ -32,6 +32,9 @@ struct linked_list
 	struct linked_list*		next;
 	enum linked_list_type	type;
 	void*					object;
+
+	void					(*fp_rmInfo)(void **dst);
+	void*					info;
 };
 typedef struct linked_list s_llist;
 
@@ -44,6 +47,32 @@ s_llist* find_llist_end(s_llist* p, e_llist_dir dir);
 void* get_llist_object(s_llist* p);
 int set_llist_object(s_llist* p, void* object, e_llist_type type);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+struct info_object
+{
+	unsigned int info_rowLen;
+	unsigned int info_colLen;
+}typedef s_infoObj;
+s_infoObj* mk_infoObj(void)
+{
+	s_infoObj* _p = (s_infoObj*)malloc(sizeof(s_infoObj));
+	memset(_p, 0, sizeof(s_infoObj));
+}
+void rm_infoObj(void** p)
+{
+	s_infoObj** _p = (s_infoObj**)p;
+	if(*_p == NULL)	return;
+	else
+	{
+		free(*_p);
+		*_p = NULL;
+		return;
+	}
+}
+void set_infoObj(s_infoObj* p, unsigned int row, unsigned int col)
+{
+	p->info_rowLen = row;
+	p->info_colLen = col;
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /* llist.c */
 s_llist* open_llist(void)
@@ -53,6 +82,7 @@ s_llist* open_llist(void)
 	p->prev = NULL;
 	p->next = NULL;
 	p->object = NULL;
+	p->info = NULL;
 	return p;
 }
 
@@ -68,6 +98,8 @@ s_llist* close_llist(s_llist* p)
 		while(_p_tg != NULL)
 		{
 			_p_tmp = _p_tg->prev;
+			if(_p_tg->info != NULL)	_p_tg->fp_rmInfo(&(_p_tg->info));
+			else;
 			free(_p_tg);
 			_p_tg = _p_tmp;
 		}
@@ -77,6 +109,8 @@ s_llist* close_llist(s_llist* p)
 		while(_p_tg != NULL)
 		{
 			_p_tmp = _p_tg->next;
+			if(_p_tg->info != NULL)	_p_tg->fp_rmInfo(&(_p_tg->info));
+			else;
 			free(_p_tg);
 			_p_tg = _p_tmp;
 		}
@@ -539,6 +573,14 @@ unsigned int find_linerAlgo_keyWord(s_llist* pList, s_dataSet* pDat, char* keyWo
 
 				if(set_llist_object(_newList , (void*)pDat->data[_row], LLIST_TYPE_SEPERATE))	printf("[find_linerAlgo_keyWord] error, set_llist_object()\r\n");
 				else;
+				if(_newList->info == NULL)
+				{
+					_newList->info = mk_infoObj();
+					_newList->fp_rmInfo = rm_infoObj;
+					set_infoObj(_newList->info, pDat->row, pDat->col);
+				}
+				else;
+
 #if 0
 				printf("p: 0x%x, _: 0x%x, n: 0x%x, obj: 0x%x, pDat->data[%d] = 0x%x, (void*) = 0x%x\r\n", \
 						_newList->prev, _newList, _newList->next, _newList->object, _row, pDat->data[_row], pDat->data[_row]);
@@ -564,31 +606,11 @@ unsigned int find_linerAlgo_keyWord(s_llist* pList, s_dataSet* pDat, char* keyWo
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define timeMes printf("[TIME] ) ")
-void printExcutingTime(struct timeval *start, struct timeval *end)
-{
-	struct timeval diff;
-	gettimeofday( end, NULL );
-
-	diff.tv_sec = end->tv_sec - start->tv_sec;
-	diff.tv_usec = end->tv_usec - start->tv_usec;
-	if(diff.tv_usec<0)
-	{
-		diff.tv_usec+=1000000;
-		diff.tv_sec-=1;
-		timeMes;	printf("%ld [sec], %ld [usec]\n", diff.tv_sec, diff.tv_usec);
-	}
-	else
-	{
-		timeMes;	printf("%ld [sec], %ld [usec]\n", diff.tv_sec, diff.tv_usec);
-	}
-}
-
 int main(int argc, char* argv[])
 {
 	// to measuring time
-	struct timeval time_s;
-	struct timeval time_e;
+	clock_t clk_s;
+	clock_t clk_e;
 
 	// to keyIn
 	char _keyInWord[1024] = {0};
@@ -646,25 +668,25 @@ int main(int argc, char* argv[])
 			{
 				findHitCnt = 0;
 				printCnt = 0;
-				gettimeofday(&time_s, NULL);
+				clk_s = clock();
 				for(s_llist* _search_dSetList = dSetList; (_search_dSetList != NULL) && (_search_dSetList->object != NULL); _search_dSetList = _search_dSetList->next)
 				{
 					printf("_search_dSetList addr: 0x%08x\r\n", _search_dSetList);
 					findHitCnt += find_linerAlgo_keyWord(findHitList , (s_dataSet*)get_llist_object(_search_dSetList), _keyInWord);
 				}
-				gettimeofday(&time_e, NULL);
+				clk_e = clock();
+				printf("clock / clock_per_sec %f\r\n", ((double)(clk_e-clk_s))/CLOCKS_PER_SEC);
 				printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, printCnt);
-				printExcutingTime(&time_s, &time_e);
-//				{
-//						for(s_llist* _hitList = findHitList; (_hitList != NULL) && (_hitList->object != NULL); _hitList = _hitList->next)
-//						{
-//							printf("p: 0x%08x,_: 0x%08x,n: 0x%08x,", _hitList->prev, _hitList, _hitList->next);
-//							print_dataSetCol((s_strType**)get_llist_object(_hitList), dSet_au500->col);
-//							printCnt++;
-//						}
-//					printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, printCnt);
-//					printExcutingTime(&time_s, &time_e);
-//				}
+				{
+						for(s_llist* _pr_hitList = findHitList; (_pr_hitList != NULL) && (_pr_hitList->object != NULL); _pr_hitList = _pr_hitList->next)
+						{
+							printf("p: 0x%08x,_: 0x%08x,n: 0x%08x,", _pr_hitList->prev, _pr_hitList, _pr_hitList->next);
+							print_dataSetCol((s_strType**)get_llist_object(_pr_hitList), ((s_infoObj*)(_pr_hitList->info))->info_colLen);
+							printCnt++;
+						}
+					printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, printCnt);
+					printf("clock / clock_per_sec %f\r\n", ((double)(clk_e-clk_s))/CLOCKS_PER_SEC);
+				}
 				// clear llist
 				findHitList = close_llist(findHitList );
 				findHitList = open_llist();
