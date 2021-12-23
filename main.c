@@ -351,6 +351,7 @@ void print_dataSet(s_dataSet* p)
 	printf("[print_dataSet] p->row: %d, p->col: %d\r\n", p->row, p->col);
 	for(unsigned int _row = 0; _row < p->row; _row++)
 	{
+		printf("Addr: 0x%x, ", p->data[_row]);
 		for(unsigned int _col = 0; _col < p->col; _col++)
 		{
 			printf("%s,", (p->data[_row][_col])->strVal);
@@ -533,13 +534,19 @@ unsigned int find_linerAlgo_keyWord(s_llist* pList, s_dataSet* pDat, char* keyWo
 #endif
 			if(_loc != NULL)
 			{
+				if(_newList->object != NULL)	_newList = mk_llist(_newList, LLIST_DIR_NEXT);
+				else;
+
+				if(set_llist_object(_newList , (void*)pDat->data[_row], LLIST_TYPE_SEPERATE))	printf("[find_linerAlgo_keyWord] error, set_llist_object()\r\n");
+				else;
+#if 0
+				printf("p: 0x%x, _: 0x%x, n: 0x%x, obj: 0x%x, pDat->data[%d] = 0x%x, (void*) = 0x%x\r\n", \
+						_newList->prev, _newList, _newList->next, _newList->object, _row, pDat->data[_row], pDat->data[_row]);
+#endif
 #if 0
 				printf("Found List-> ");
 				print_dataSetCol(pDat->data[_row], pDat->col);
 #endif
-				_newList = mk_llist(_newList, LLIST_DIR_NEXT);
-				if(set_llist_object(_newList , (void*)pDat->data[_row], LLIST_TYPE_SEPERATE))	printf("[find_linerAlgo_keyWord] error, set_llist_object()\r\n");
-				else;
 				
 				_hitCnt++;
 				break;
@@ -547,6 +554,8 @@ unsigned int find_linerAlgo_keyWord(s_llist* pList, s_dataSet* pDat, char* keyWo
 			else;
 		}
 	}
+	printf("p: 0x%x, _: 0x%x, n: 0x%x, obj: 0x%x\r\n", \
+			pList->prev, pList, pList->next, pList->object);
 	return _hitCnt;
 }
 
@@ -580,7 +589,7 @@ int main(int argc, char* argv[])
 	struct timeval time_s;
 
 	// to keyIn
-	char _keyWord[1024] = {0};
+	char _keyInWord[1024] = {0};
 
 	unsigned int findHitCnt;
 	s_llist* findHitList;
@@ -589,15 +598,26 @@ int main(int argc, char* argv[])
 	/* init llist */
 	findHitList = open_llist();
 
-
 	dSet_au500 = loadFile("au-500.csv");
-	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
-	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
-	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
 	print_dataSet(dSet_au500);
 	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
 	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
 	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
+
+	{
+		gettimeofday(&time_s, NULL);
+		findHitCnt = find_linerAlgo_keyWord(findHitList , dSet_au500, "1");
+		printExcutingTime(&time_s);
+		{
+			unsigned int _cnt = 0;
+			for(s_llist* _hitList = findHitList; _hitList != NULL; _hitList = _hitList->next)
+			{
+				print_dataSetCol((s_strType**)get_llist_object(_hitList), dSet_au500->col);
+				_cnt++;
+			}
+			printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, _cnt);
+		}
+	}
 
 	s_strType* _tmp;
 	_tmp = mk_strTypeCpVal("testField", "testString");
@@ -605,9 +625,5 @@ int main(int argc, char* argv[])
 	rm_strTypeCpVal(&_tmp);
 	printf("[s_strType] delete test _tmp: 0x%x\r\n", _tmp);
 
-	gettimeofday(&time_s, NULL);
-	findHitCnt = find_linerAlgo_keyWord(findHitList , dSet_au500, "1");
-	printExcutingTime(&time_s);
-	printf("Hit count: %d\r\n", findHitCnt);
 	return 0;
 }
