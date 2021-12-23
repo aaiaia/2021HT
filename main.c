@@ -2,6 +2,234 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <time.h>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/* llist.h */
+enum linked_list_direction
+{
+	LLIST_DIR_DEFAULT,
+	LLIST_DIR_PREV,
+	LLIST_DIR_NEXT
+};
+typedef enum linked_list_direction e_llist_dir;
+#define LLIST_DIR_LEFT	LLIST_DIR_PREV
+#define LLIST_DIR_RIGHT	LLIST_DIR_NEXT
+
+enum linked_list_type
+{
+	LLIST_TYPE_TOGETHER,
+	LLIST_TYPE_SEPERATE
+};
+typedef enum linked_list_type e_llist_type;
+
+struct linked_list
+{
+	struct linked_list*		prev;
+	struct linked_list*		next;
+	enum linked_list_type	type;
+	void*					object;
+};
+typedef struct linked_list s_llist;
+
+
+s_llist* open_llist(void);
+s_llist* close_llist(s_llist* p_llist);
+s_llist* mk_llist(s_llist* p, e_llist_dir dir);
+s_llist* rm_llist(s_llist* p);
+s_llist* find_llist_end(s_llist* p, e_llist_dir dir);
+void* get_llist_object(s_llist* p);
+int set_llist_object(s_llist* p, void* object, e_llist_type type);
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/* llist.c */
+s_llist* open_llist(void)
+{
+	s_llist* p = (s_llist*)calloc(1, sizeof(s_llist));
+	memset(p, 0u, sizeof(s_llist));
+	p->prev = NULL;
+	p->next = NULL;
+	p->object = NULL;
+	return p;
+}
+
+s_llist* close_llist(s_llist* p)
+{
+	s_llist* _p_tg;
+	s_llist* _p_tmp;
+
+	if(p != NULL)
+	{
+		/* Remove prev side llist */
+		_p_tg = p->prev;
+		while(_p_tg != NULL)
+		{
+			_p_tmp = _p_tg->prev;
+			free(_p_tg);
+			_p_tg = _p_tmp;
+		}
+
+		/* Remove next side llist */
+		_p_tg = p->next;
+		while(_p_tg != NULL)
+		{
+			_p_tmp = _p_tg->next;
+			free(_p_tg);
+			_p_tg = _p_tmp;
+		}
+	}
+	else
+	{
+		/* Do nothing */
+	}
+
+	return NULL;
+}
+
+s_llist* mk_llist(s_llist* p, e_llist_dir dir)
+{
+	s_llist* _p_new;
+	s_llist* _p_tmp;
+	if(p == NULL)
+	{
+		return NULL;
+	}
+	else
+	{
+		switch(dir)
+		{
+			case LLIST_DIR_PREV:
+			{
+				_p_new = open_llist();
+
+				_p_tmp = p->prev;
+
+				//link new and cur
+				p->prev = _p_new;
+				_p_new->next = p;
+
+				if(_p_tmp != NULL)	
+				{
+					_p_tmp->next=_p_new;
+					_p_new->prev=_p_tmp;
+				}
+				return _p_new;
+			}
+
+			case LLIST_DIR_NEXT:
+			{
+				_p_new = open_llist();
+
+				_p_tmp = p->next;
+
+				//link new and cur
+				p->next = _p_new;
+				_p_new->prev = p;
+
+				if(_p_tmp != NULL)	
+				{
+					_p_tmp->prev = _p_new;
+					_p_new->next = _p_tmp;
+				}
+				return _p_new;
+			}
+
+			default:
+			{
+				return p;
+			}
+		}
+	}
+}
+
+s_llist* rm_llist(s_llist* p)
+{
+	s_llist* _next;
+	s_llist* _prev;
+	
+	if(p != NULL)
+	{
+		_next = p->next;
+		_prev = p->prev;
+
+		if	(_next != NULL)		_next->prev=_prev;
+		if	(_prev != NULL)		_prev->next=_next;
+
+		if	(p->object != NULL)
+		{
+			if(p->type == LLIST_TYPE_TOGETHER)	free(p->object);
+		}
+
+		free(p);
+		if		(_next != NULL)	return _next;
+		else if	(_prev != NULL)	return _prev;
+		else					return NULL;
+	}
+	else
+	{
+		return NULL;
+	}	
+
+}
+
+s_llist* find_llist_end(s_llist* p, e_llist_dir dir)
+{
+	if(p==NULL)
+	{
+		return NULL;
+	}
+	else
+	{
+		s_llist* _tmp;
+		switch(dir)
+		{
+			case LLIST_DIR_PREV:
+			{
+				for(_tmp=p; _tmp->prev!=NULL; _tmp=_tmp->prev);
+			}
+			break;
+
+			case LLIST_DIR_NEXT:
+			{
+				for(_tmp=p; _tmp->next!=NULL; _tmp=_tmp->next);
+			}
+			break;
+
+			default:
+			{
+				_tmp = p;
+			}
+			break;
+		}
+		return _tmp;
+	}
+}
+
+void* get_llist_object(s_llist* p)
+{
+    if(p==NULL)
+    {
+        return NULL;
+    }
+    return p->object;
+}
+
+int set_llist_object(s_llist* p, void* object, e_llist_type type)
+{
+    if(p==NULL)
+    {
+        return -1;
+    }
+    p->object = object;
+	p->type = type;
+    return 0;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 struct strType
 {
 	char* fieldName;
@@ -106,6 +334,16 @@ s_dataSet* mk_dataSet(unsigned int row, unsigned int col)
 void rm_dataSet(s_dataSet** p)
 {
 	return;
+}
+
+void print_dataSetCol(s_strType** p, unsigned int colLen)
+{
+	unsigned int _col;
+	for(_col = 0; _col < colLen-1; _col++)
+	{
+		printf("%s,",p[_col]->strVal);
+	}
+	printf("%s\r\n",p[_col++]->strVal);
 }
 
 void print_dataSet(s_dataSet* p)
@@ -277,9 +515,81 @@ s_dataSet* loadFile(char* path)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+unsigned int find_linerAlgo_keyWord(s_llist* pList, s_dataSet* pDat, char* keyWord)
+{
+	s_llist* _newList = pList;
+	unsigned int _hitCnt = 0;
+	for(unsigned int _row = 0; _row < pDat->row; _row++)
+	{
+		for(unsigned int _col = 0; _col < pDat->col; _col++)
+		{
+			char* _loc;
+#if 0
+			printf("ri: %d, ci: %d, str: \"%s\"", _row, _col, (pDat->data[_row][_col])->strVal);
+#endif
+			_loc = strstr((pDat->data[_row][_col])->strVal, keyWord);
+#if 0
+			printf(" ok, _loc: \"0x%x\"\r\n", _loc);
+#endif
+			if(_loc != NULL)
+			{
+#if 0
+				printf("Found List-> ");
+				print_dataSetCol(pDat->data[_row], pDat->col);
+#endif
+				_newList = mk_llist(_newList, LLIST_DIR_NEXT);
+				if(set_llist_object(_newList , (void*)pDat->data[_row], LLIST_TYPE_SEPERATE))	printf("[find_linerAlgo_keyWord] error, set_llist_object()\r\n");
+				else;
+				
+				_hitCnt++;
+				break;
+			}
+			else;
+		}
+	}
+	return _hitCnt;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+#define timeMes printf("[TIME] ) ")
+void printExcutingTime(struct timeval *start)
+{
+	struct timeval end;
+	struct timeval diff;
+	gettimeofday( &end, NULL );
+
+	diff.tv_sec = end.tv_sec - start->tv_sec;
+	diff.tv_usec = end.tv_usec - start->tv_usec;
+	if(diff.tv_usec<0)
+	{
+		diff.tv_usec+=1000000;
+		diff.tv_sec-=1;
+		timeMes;	printf("%ld [sec], %ld [usec]\n", diff.tv_sec, diff.tv_usec);
+	}
+	else
+	{
+		timeMes;	printf("%ld [sec], %ld [usec]\n", diff.tv_sec, diff.tv_usec);
+	}
+}
+
 int main(int argc, char* argv[])
 {
+	// to measuring time
+	struct timeval time_s;
+
+	// to keyIn
+	char _keyWord[1024] = {0};
+
+	unsigned int findHitCnt;
+	s_llist* findHitList;
 	s_dataSet* dSet_au500 = NULL;
+
+	/* init llist */
+	findHitList = open_llist();
+
+
 	dSet_au500 = loadFile("au-500.csv");
 	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
 	printf("////////////////////////////////////////////////////////////////////////////////////////////////////\r\n");
@@ -294,7 +604,10 @@ int main(int argc, char* argv[])
 
 	rm_strTypeCpVal(&_tmp);
 	printf("[s_strType] delete test _tmp: 0x%x\r\n", _tmp);
-	
 
+	gettimeofday(&time_s, NULL);
+	findHitCnt = find_linerAlgo_keyWord(findHitList , dSet_au500, "1");
+	printExcutingTime(&time_s);
+	printf("Hit count: %d\r\n", findHitCnt);
 	return 0;
 }
