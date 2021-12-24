@@ -640,7 +640,7 @@ int main(int argc, char* argv[])
 		scanf("%1023s", _keyInWord);
 		switch(_keyInWord[0])
 		{
-			case '/':
+			case '\\':
 			{
 				printf("Insert fineName: ");
 				scanf("%1023s", _keyInWord);
@@ -675,7 +675,7 @@ int main(int argc, char* argv[])
 					findHitCnt += find_linerAlgo_keyWord(findHitList , (s_dataSet*)get_llist_object(_search_dSetList), _keyInWord);
 				}
 				clk_e = clock();
-				printf("clock / clock_per_sec %f\r\n", ((double)(clk_e-clk_s))/CLOCKS_PER_SEC);
+				printf("sec :%f[s], tick: %ld\r\n", ((double)(clk_e-clk_s))/CLOCKS_PER_SEC, (clk_e-clk_s));
 				printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, printCnt);
 				{
 						for(s_llist* _pr_hitList = findHitList; (_pr_hitList != NULL) && (_pr_hitList->object != NULL); _pr_hitList = _pr_hitList->next)
@@ -685,7 +685,7 @@ int main(int argc, char* argv[])
 							printCnt++;
 						}
 					printf("Hit count: %d, print cnt: %d\r\n", findHitCnt, printCnt);
-					printf("clock / clock_per_sec %f\r\n", ((double)(clk_e-clk_s))/CLOCKS_PER_SEC);
+					printf("sec :%f[s], tick: %ld\r\n", ((double)(clk_e-clk_s))/CLOCKS_PER_SEC, (clk_e-clk_s));
 				}
 				// clear llist
 				findHitList = close_llist(findHitList );
