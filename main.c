@@ -671,7 +671,9 @@ int main(int argc, char* argv[])
 				clk_s = clock();
 				for(s_llist* _search_dSetList = dSetList; (_search_dSetList != NULL) && (_search_dSetList->object != NULL); _search_dSetList = _search_dSetList->next)
 				{
+#if 0
 					printf("_search_dSetList addr: 0x%08x\r\n", _search_dSetList);
+#endif
 					findHitCnt += find_linerAlgo_keyWord(findHitList , (s_dataSet*)get_llist_object(_search_dSetList), _keyInWord);
 				}
 				clk_e = clock();
